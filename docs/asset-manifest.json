@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/DragView/static/css/main.82d47991.css",
-    "main.js": "/DragView/static/js/main.60ebc285.js",
+    "main.js": "/DragView/static/js/main.e4a6c7f4.js",
     "static/js/787.4abed053.chunk.js": "/DragView/static/js/787.4abed053.chunk.js",
     "static/media/comparisons_horns_out.gif": "/DragView/static/media/comparisons_horns_out.8755ce917c640e02c5a1.gif",
     "static/media/comparisons_room_out.gif": "/DragView/static/media/comparisons_room_out.76c8ad36a645595b5548.gif",
@@ -57,11 +57,11 @@
     "static/media/revicons.woff": "/DragView/static/media/revicons.e8746a624ed098489406.woff",
     "index.html": "/DragView/index.html",
     "main.82d47991.css.map": "/DragView/static/css/main.82d47991.css.map",
-    "main.60ebc285.js.map": "/DragView/static/js/main.60ebc285.js.map",
+    "main.e4a6c7f4.js.map": "/DragView/static/js/main.e4a6c7f4.js.map",
     "787.4abed053.chunk.js.map": "/DragView/static/js/787.4abed053.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.82d47991.css",
-    "static/js/main.60ebc285.js"
+    "static/js/main.e4a6c7f4.js"
   ]
 }
