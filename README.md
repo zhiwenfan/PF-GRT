@@ -4,7 +4,7 @@ Offical implementation of the paper DragView.
 
 Code will be released soon.
 
- [[Website]](https://github.com/zhiwenfan/DragView/)
+ [[Website]](https://zhiwenfan.github.io/DragView/)
 
 <div>
 <img src="https://github.com/zhiwenfan/DragView/blob/main/docs/static/gifs/comparisons_horns_out.gif" height="300"/>
