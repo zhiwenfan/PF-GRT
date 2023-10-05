@@ -7,8 +7,8 @@ Code will be released soon.
  [[Website]](https://github.com/zhiwenfan/DragView/)
 
 <div>
-<img src="https://github.com/zhiwenfan/DragView/blob/main/docs/static/gifs/comparisons_horns_out.gif" height="350"/>
-<img src="https://github.com/zhiwenfan/DragView/blob/main/docs/static/gifs/comparisons_room_out.gif" height="350"/>
+<img src="https://github.com/zhiwenfan/DragView/blob/main/docs/static/gifs/comparisons_horns_out.gif" height="300"/>
+<img src="https://github.com/zhiwenfan/DragView/blob/main/docs/static/gifs/comparisons_room_out.gif" height="300"/>
 </div>
 
 
