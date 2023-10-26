@@ -7,8 +7,8 @@ Code will be released soon.
  [[Website]](https://zhiwenfan.github.io/DragView/) [[Paper]](https://arxiv.org/abs/2310.03704)
 
 <div>
-https://zhiwenfan.github.io/DragView/static/media/render_poses_fern1_renders.e6ce04d9c6893fb1b47d.gif
-https://zhiwenfan.github.io/DragView/static/media/render_poses_flower1_trajectory.2360e5d677dd087b10df.gif
+ <img src="https://zhiwenfan.github.io/DragView/static/media/render_poses_fern1_renders.e6ce04d9c6893fb1b47d.gif" height="300"/>
+<img src="https://zhiwenfan.github.io/DragView/static/media/render_poses_flower1_trajectory.2360e5d677dd087b10df.gif" height="300"/>
 </div>
 
 
