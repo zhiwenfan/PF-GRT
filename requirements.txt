@@ -1,0 +1,7 @@
+plyfile
+transforms3d
+configargparse
+lpips
+loguru
+scikit-image
+imageio==2.21.2
