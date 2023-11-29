@@ -1,6 +1,6 @@
-# Drag View: Generalizable Novel View Synthesis with Unposed Imagery 
+# Pose-Free Generalizable Rendering Transformer 
 
-Offical implementation of the paper DragView.
+Offical implementation of the paper PF-GRT.
 
 Code will be released soon.
 
