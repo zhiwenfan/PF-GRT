@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/PF-GRT/static/css/main.1d383100.css",
-    "main.js": "/PF-GRT/static/js/main.ee35ce69.js",
+    "main.js": "/PF-GRT/static/js/main.cf23664f.js",
     "static/js/787.4abed053.chunk.js": "/PF-GRT/static/js/787.4abed053.chunk.js",
     "static/media/render_poses_fortress3_renders.gif": "/PF-GRT/static/media/render_poses_fortress3_renders.74c2962342074d2a7970.gif",
     "static/media/render_poses_fortress2_renders.gif": "/PF-GRT/static/media/render_poses_fortress2_renders.73f1cac2b8950a210d0e.gif",
@@ -49,7 +49,9 @@
     "static/media/brand-icons.woff": "/PF-GRT/static/media/brand-icons.cac87dc00c87a5d74711.woff",
     "static/media/brand-icons.woff2": "/PF-GRT/static/media/brand-icons.278156e41e0ad908cf7f.woff2",
     "static/media/icons.woff": "/PF-GRT/static/media/icons.425399f81e4ce7cbd967.woff",
+    "static/media/render_poses_hotdog_trajectory.gif": "/PF-GRT/static/media/render_poses_hotdog_trajectory.dd776cb22ea0fedc5dfa.gif",
     "static/media/icons.woff2": "/PF-GRT/static/media/icons.38c6d8bab26db77d8c80.woff2",
+    "static/media/shiny_trajectory.gif": "/PF-GRT/static/media/shiny_trajectory.2f8bbaaee3e27f239e4d.gif",
     "static/media/outline-icons.eot": "/PF-GRT/static/media/outline-icons.752905fa5edf21fc52a1.eot",
     "static/media/outline-icons.ttf": "/PF-GRT/static/media/outline-icons.5367103510b27b784827.ttf",
     "static/media/flags.png": "/PF-GRT/static/media/flags.99f63ae7a743f21ab308.png",
@@ -60,11 +62,11 @@
     "static/media/revicons.woff": "/PF-GRT/static/media/revicons.e8746a624ed098489406.woff",
     "index.html": "/PF-GRT/index.html",
     "main.1d383100.css.map": "/PF-GRT/static/css/main.1d383100.css.map",
-    "main.ee35ce69.js.map": "/PF-GRT/static/js/main.ee35ce69.js.map",
+    "main.cf23664f.js.map": "/PF-GRT/static/js/main.cf23664f.js.map",
     "787.4abed053.chunk.js.map": "/PF-GRT/static/js/787.4abed053.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.1d383100.css",
-    "static/js/main.ee35ce69.js"
+    "static/js/main.cf23664f.js"
   ]
 }
