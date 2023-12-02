@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/PF-GRT/static/css/main.1d383100.css",
-    "main.js": "/PF-GRT/static/js/main.cf23664f.js",
+    "main.js": "/PF-GRT/static/js/main.b155f6b8.js",
     "static/js/787.4abed053.chunk.js": "/PF-GRT/static/js/787.4abed053.chunk.js",
     "static/media/render_poses_fortress3_renders.gif": "/PF-GRT/static/media/render_poses_fortress3_renders.74c2962342074d2a7970.gif",
     "static/media/render_poses_fortress2_renders.gif": "/PF-GRT/static/media/render_poses_fortress2_renders.73f1cac2b8950a210d0e.gif",
@@ -17,6 +17,7 @@
     "static/media/render_poses_fern2_renders.gif": "/PF-GRT/static/media/render_poses_fern2_renders.d77ae6f21a82a157e64b.gif",
     "static/media/render_poses_fern3_renders.gif": "/PF-GRT/static/media/render_poses_fern3_renders.b6ac19487cd0e2e5f3d9.gif",
     "static/media/ours_hotdog.gif": "/PF-GRT/static/media/ours_hotdog.834acac0567ce3eed9b0.gif",
+    "static/media/ours_shiny.gif": "/PF-GRT/static/media/ours_shiny.2df5651a1f8488bf7818.gif",
     "static/media/render_poses_room2_renders.gif": "/PF-GRT/static/media/render_poses_room2_renders.2b2ada7a4ef6e775b828.gif",
     "static/media/render_poses_room1_renders.gif": "/PF-GRT/static/media/render_poses_room1_renders.98fe774eccfdde85143a.gif",
     "static/media/render_poses_room3_renders.gif": "/PF-GRT/static/media/render_poses_room3_renders.f25dd71e548db89bceaa.gif",
@@ -51,10 +52,11 @@
     "static/media/icons.woff": "/PF-GRT/static/media/icons.425399f81e4ce7cbd967.woff",
     "static/media/render_poses_hotdog_trajectory.gif": "/PF-GRT/static/media/render_poses_hotdog_trajectory.dd776cb22ea0fedc5dfa.gif",
     "static/media/icons.woff2": "/PF-GRT/static/media/icons.38c6d8bab26db77d8c80.woff2",
-    "static/media/shiny_trajectory.gif": "/PF-GRT/static/media/shiny_trajectory.2f8bbaaee3e27f239e4d.gif",
+    "static/media/shiny_trajectory_pasta.gif": "/PF-GRT/static/media/shiny_trajectory_pasta.2f8bbaaee3e27f239e4d.gif",
     "static/media/outline-icons.eot": "/PF-GRT/static/media/outline-icons.752905fa5edf21fc52a1.eot",
     "static/media/outline-icons.ttf": "/PF-GRT/static/media/outline-icons.5367103510b27b784827.ttf",
     "static/media/flags.png": "/PF-GRT/static/media/flags.99f63ae7a743f21ab308.png",
+    "static/media/shiny_trajectory.gif": "/PF-GRT/static/media/shiny_trajectory.fdcbc2d29657582f2e09.gif",
     "static/media/outline-icons.woff": "/PF-GRT/static/media/outline-icons.ddae9b1ba9b0b42f5880.woff",
     "static/media/outline-icons.woff2": "/PF-GRT/static/media/outline-icons.687a4990ea22bb1a49d4.woff2",
     "static/media/revicons.eot": "/PF-GRT/static/media/revicons.a77de540a38981833f9e.eot",
@@ -62,11 +64,11 @@
     "static/media/revicons.woff": "/PF-GRT/static/media/revicons.e8746a624ed098489406.woff",
     "index.html": "/PF-GRT/index.html",
     "main.1d383100.css.map": "/PF-GRT/static/css/main.1d383100.css.map",
-    "main.cf23664f.js.map": "/PF-GRT/static/js/main.cf23664f.js.map",
+    "main.b155f6b8.js.map": "/PF-GRT/static/js/main.b155f6b8.js.map",
     "787.4abed053.chunk.js.map": "/PF-GRT/static/js/787.4abed053.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.1d383100.css",
-    "static/js/main.cf23664f.js"
+    "static/js/main.b155f6b8.js"
   ]
 }
