@@ -4,4 +4,7 @@ configargparse
 lpips
 loguru
 scikit-image
+opencv-python
+tabulate
+matplotlib
 imageio==2.21.2
