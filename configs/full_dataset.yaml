@@ -1,7 +1,7 @@
 ### INPUT
-expname = without_pose_bicycle
-### rootdir = ./
-rootdir = data/Co3d
+expname = full_data
+rootdir = ./
+
 render_stride = 1
 distributed = False
 

@@ -10,14 +10,14 @@ from models.projection import Projector
 from models.sample_ray import RaySamplerSingleImage
 from models.render_image import render_single_image
 from utils import img_HWC2CHW
-np.random.seed(0)
+from loguru import logger
 
 if __name__ == "__main__":
     grt_model.switch_to_eval()
     from torch.utils.data import DataLoader
-    # dataset = dataset_dict["llff"](args, "validation", scenes=('room'))
-    dataset = dataset_dict["co3d"](args, "validation", scenes=('apple'))
-    from gnt.data_loaders.free_pose import interpolate_render_poses
+    dataset = dataset_dict["llff"](args, "validation", scenes=('room'))
+    # dataset = dataset_dict["co3d"](args, "validation", scenes=('apple'))
+    from data_loaders.free_pose import interpolate_render_poses
     
     # interpolate_poses = get_render_poses(dataset)
     interpolate_poses = interpolate_render_poses(dataset,view_num=120)
@@ -28,25 +28,23 @@ if __name__ == "__main__":
 
     device = "cuda:{}".format(0)
     projector = Projector(device=device)
-    from gnt.data_loaders.data_utils import  get_nearest_pose_ids
-    
+    from data_loaders.data_utils import  get_nearest_pose_ids
+    dynamic_select = False
     for idx , interpolate_pose in enumerate(interpolate_poses):
         render_pose = np.vstack((interpolate_pose, np.array([0,0,0,1])))
-        
         data["camera"][0,-16:] = torch.from_numpy(render_pose).flatten()
-        print("render pose:", data["camera"][0,-16:])
-
+        camera_pose = data["camera"][0,-16:].view(-1) 
+        logger.info(f"render pose:  { camera_pose }" )
         t_start = time.time()
 
-        # get nearest_pose_ids
-        nearest_pose_ids = get_nearest_pose_ids(
-            render_pose,
-            dataset.train_poses[0],
-            args.num_source_views,
-            tar_id=-1,
-            angular_dist_method="dist",
-        )
-
+        if idx==0 and not dynamic_select:
+            nearest_pose_ids = get_nearest_pose_ids(
+                render_pose,
+                dataset.train_poses[0],
+                args.num_source_views,
+                tar_id=-1,
+                angular_dist_method="dist",
+            )
         src_rgbs = []
         src_cameras = []
         train_rgb_files = dataset.train_rgb_files[0]
@@ -75,14 +73,14 @@ if __name__ == "__main__":
         
         target_image = gt_img.detach().cpu().numpy()
         with torch.no_grad():
-            featmaps = gnt_model.feature_net(data["src_rgbs"].squeeze(0).permute(0, 3, 1, 2))
+            featmaps = grt_model.feature_net(data["src_rgbs"].squeeze(0).permute(0, 3, 1, 2))
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             ray_batch = tmp_ray_sampler.get_all()
     
             ret = render_single_image(
                     ray_sampler=tmp_ray_sampler,
                     ray_batch=ray_batch,
-                    model=gnt_model,
+                    model=grt_model,
                     projector=projector,
                     chunk_size=args.chunk_size,
                     N_samples=args.N_samples,
@@ -95,16 +93,14 @@ if __name__ == "__main__":
                     ret_alpha=args.N_importance > 0,
                     single_net=args.single_net,
                 )
-
         rgb_coarse = img_HWC2CHW(ret["outputs_coarse"]["rgb"].detach().cpu())
         rgb_coarse = rgb_coarse.permute(1, 2, 0).detach().cpu().numpy()
-
         out_folder = os.path.join(args.rootdir, "out", "free_camera")
-        print("outputs will be saved to {}".format(out_folder))
+        logger.info("outputs will be saved to {}".format(out_folder))
         os.makedirs(out_folder, exist_ok=True)
         imageio.imwrite(os.path.join(out_folder, "test_{:03d}.png".format(idx)), rgb_coarse)
         t_end = time.time()
-        print("render novel view cost {} s".format((t_end- t_start)))
+        logger.info("render novel view cost {} s".format((t_end- t_start)))
 
 
 

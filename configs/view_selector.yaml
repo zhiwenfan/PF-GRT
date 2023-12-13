@@ -1,5 +1,5 @@
 RENDER:
-  OUTPUT_PATH: "../data/reference_pool_6d_sample_10000"
+  OUTPUT_PATH: "./data/"
   NUM: 10000
   CAM_DIST: 4
 MODEL:
@@ -11,16 +11,12 @@ MODEL:
 DATA:
   PIXEL_MEAN: [0.485, 0.456, 0.406]
   PIXEL_STD:  [0.229, 0.224, 0.225]
-  MESH_DIR: '../data/linemod_zhs/models/' #/cvlabdata2/home/yhu/data/linemod/models/
-  BBOX_FILE: '../data/linemod_zhs/linemod_bbox.json'
-  META_DIR: '../data/'
-  RENDER_DIR: 'reference_pool_6d_sample_10000'
   INTERNAL_WIDTH: 640
   INTERNAL_HEIGHT: 480
   CROP_SIZE: 128
   VIEW_NUM: 18
   ANCHOR_NUM: 1024
-  DATASET: 'LINEMOD'
+  DATASET: 'LLFF'
   INTERNAL_K: [572.4114, 0, 325.2611, 0, 573.57043, 242.04899, 0, 0, 1]
   ROTATION_NOISE: [0.5, 0.5, 0.5, 0.5]
   TRANSLATION_NOISE: [0, 0, 0]
@@ -36,7 +32,6 @@ TRAIN:
   LR: 0.0001
   GAMMA: 0.1
   STEP: [50, 150]
-  WORKING_DIR: "./logs/linemod/"
   FROM_SCRATCH: True
   ROTATION_AG: True
   RANDOM_OCC: False
@@ -45,11 +40,9 @@ TRAIN:
 
 TEST:
   VISUAL: True
-  VISUAL_PATH: "./logs/linemod/visual/"
   THR_SO3: 30
   INIT_K: 4096
   FPS_K: 256
-  UNSEEN: ['APE', 'BENCHVISE', 'CAM', 'CAN']
   VIZ: True
 
 LINEMOD:

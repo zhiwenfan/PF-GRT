@@ -3,8 +3,7 @@ import configargparse
 def config_parser():
     parser = configargparse.ArgumentParser()
     # general
-    parser.add_argument("--config",  default="configs/full_dataset.yaml",is_config_file=True, help="config file path")
-    
+    parser.add_argument("--config",  default="configs/pose_free_transfomer.yaml",is_config_file=True, help="config file path")
     parser.add_argument(
         "--rootdir",
         type=str,

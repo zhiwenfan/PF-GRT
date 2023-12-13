@@ -1,3 +1,4 @@
+h5py
 plyfile
 transforms3d
 configargparse

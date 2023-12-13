@@ -1,16 +1,17 @@
 ### INPUT
-expname = without_pose_bicycle
+expname = pose_free_transfomer
 ### rootdir = ./
-rootdir = data/Co3d
+rootdir = ./
 render_stride = 1
 distributed = False
 
 ## dataset
 train_dataset = llff+spaces+ibrnet_collected+realestate+google_scanned
 dataset_weights = [0.3, 0.15, 0.35, 0.15, 0.05]
-eval_dataset = co3d
-eval_scenes = [bicycle,pizza]
-
+# eval_dataset = co3d
+# eval_scenes = [bicycle,pizza]
+eval_dataset = llff_test
+eval_scenes = [fern,room]
 
 ### TRAINING
 N_rand = 4048

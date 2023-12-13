@@ -221,6 +221,15 @@ def batched_angular_dist_rot_matrix(R1, R2):
         )
     )
 
+def get_nearest_pose_ids_by_viewselector(
+    source_image,
+    ref_imgaes,
+    num_select
+):
+    
+    sorted_ids = np.argsort(dists)
+    selected_ids = sorted_ids[:num_select]
+    return selected_ids
 
 def get_nearest_pose_ids(
     tar_pose,
@@ -229,6 +238,7 @@ def get_nearest_pose_ids(
     tar_id=-1,
     angular_dist_method="vector",
     scene_center=(0, 0, 0),
+    source_image = None
 ):
     """
     Args:

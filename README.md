@@ -3,9 +3,8 @@
 <h1>Pose-Free Generalizable Rendering Transformer</h1>
 
 
-[![Project Page](https://img.shields.io/badge/PFGTR-Homepage-blue?logo=googlechrome&logoColor=blue)](https://zhiwenfan.github.io/PF-GRT)
-[![Paper](https://img.shields.io/badge/cs.CV-Paper-b31b1b?logo=arxiv&logoColor=red)](https://arxiv.org/abs/2310.03704)
-[![Video](https://img.shields.io/badge/YouTube-Video-c4302b?logo=youtube&logoColor=red)](https://youtu.be/EfDOuVa5A2A)
+## [Paper:[![Paper](https://img.shields.io/badge/cs.CV-Paper-b31b1b?logo=arxiv&logoColor=red)](https://arxiv.org/abs/2310.03704)] | [Website: [![Project Page](https://img.shields.io/badge/PFGTR-Homepage-blue?logo=googlechrome&logoColor=blue)](https://zhiwenfan.github.io/PF-GRT)] | [Video: [![Video](https://img.shields.io/badge/YouTube-Video-c4302b?logo=youtube&logoColor=red)](https://youtu.be/EfDOuVa5A2A)]
+
 
 <!-- <div>
         <a href="https://zhiwenfan.github.io/">Zhiwen Fan</a><strong><sup>1,*</sup></strong>,
