@@ -147,10 +147,10 @@ python3 eval.py --config configs/pose_free_transfomer.yaml --expname llff --chun
 ```
 
 
-<!-- ### TODO 3. Run `./demo.sh` 
+### TODO 3. Run `./demo.sh` 
 ```bash
 bash demo.sh
-``` -->
+```
 
 The code has been recently tidied up for release and could perhaps contain tiny bugs. Please feel free to open an issue.
 
