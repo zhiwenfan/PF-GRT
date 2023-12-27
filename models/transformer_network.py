@@ -2,12 +2,37 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+def de_parallel(model):
+    return model.module if hasattr(model, "module") else model
+
+
+########################################################################################################################
+# creation/saving/loading of nerf
+########################################################################################################################
+
+
+class ConvBlock(nn.Module):
+    def __init__(self, idim, hdim=None, odim=None):
+        super().__init__()
+        if hdim is None:
+            hdim = idim
+        if odim is None:
+            odim = 2 * hdim
+        conv_kwargs = {'bias': False, 'kernel_size': 3, 'padding': 1}
+        self.layers = nn.Sequential(
+            nn.Conv2d(idim, hdim, stride=1, **conv_kwargs),
+            nn.ReLU(),
+            nn.Conv2d(hdim, odim, stride=2, **conv_kwargs),
+            nn.ReLU())
+    def forward(self, x):
+        return self.layers(x)
+
+
+
 def raw2alpha(sigma, dist):
     # sigma, dist  [N_rays, N_samples]
     alpha = 1. - torch.exp(-sigma*dist)
-
     T = torch.cumprod(torch.cat([torch.ones(alpha.shape[0], 1).to(alpha.device), 1. - alpha + 1e-10], -1), -1)
-
     weights = alpha * T[:, :-1]  # [N_rays, N_samples]
     return alpha, weights, T[:,-1:]
 
@@ -80,23 +105,27 @@ class Attention2D(nn.Module):
         self.out_fc = nn.Linear(dim, dim)
         self.dp = nn.Dropout(dp_rate)
 
-    def forward(self, q, k, pos, mask=None):
+    def forward(self, q, k, pos=None, mask=None):
         q = self.q_fc(q)
         k = self.k_fc(k)
         v = self.v_fc(k)
-
-        pos = self.pos_fc(pos)
-        attn = k - q[:, :, None, :] + pos
+        if pos is not None:
+            pos = self.pos_fc(pos)
+            attn = k - q[:, :, None, :] + pos
+        else:
+            attn = k - q[:, :, None, :]
         attn = self.attn_fc(attn)
         if mask is not None:
             attn = attn.masked_fill(mask == 0, -1e9)
         attn = torch.softmax(attn, dim=-2)
         attn = self.dp(attn)
+        if pos is not None:
+            x = ((v + pos) * attn).sum(dim=2)
+        else:
+            x = (v*attn).sum(dim=2)
 
-        x = ((v + pos) * attn).sum(dim=2)
         x = self.dp(self.out_fc(x))
         return x
-
 
 # View Transformer
 class Transformer2D(nn.Module):
@@ -104,16 +133,15 @@ class Transformer2D(nn.Module):
         super(Transformer2D, self).__init__()
         self.attn_norm = nn.LayerNorm(dim, eps=1e-6)
         self.ff_norm = nn.LayerNorm(dim, eps=1e-6)
-
         self.ff = FeedForward(dim, ff_hid_dim, ff_dp_rate)
         self.attn = Attention2D(dim, attn_dp_rate)
 
+    # q, rgb_feat, ray_diff, mask
     def forward(self, q, k, pos, mask=None):
         residue = q
         x = self.attn_norm(q)
         x = self.attn(x, k, pos, mask)
         x = x + residue
-
         residue = x
         x = self.ff_norm(x)
         x = self.ff(x)
@@ -210,10 +238,27 @@ class Transformer(nn.Module):
             return x
 
 
+class FiLM(torch.nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(FiLM, self).__init__()
+        self.gamma = torch.nn.Linear(in_channels, out_channels)
+        self.beta = torch.nn.Linear(in_channels, out_channels)
+    
+    def forward(self, x, c):
+        # Apply MLPs to scale and bias the features
+        gamma = self.gamma(c)
+        beta = self.beta(c)
 
-class GNT(nn.Module):
+        # Reshape the tensors to match the output shape
+        # Apply scaling and biasing to the features
+        return gamma * x + beta
+        # return gamma
+
+# from .view_transformer import Transformer as ViewTransformer
+
+class NoPEGNT(nn.Module):
     def __init__(self, args, in_feat_ch=32, posenc_dim=3, viewenc_dim=3, ret_alpha=False):
-        super(GNT, self).__init__()
+        super(NoPEGNT, self).__init__()
         self.rgbfeat_fc = nn.Sequential(
             nn.Linear(in_feat_ch + 3, args.netwidth),
             nn.ReLU(),
@@ -233,6 +278,7 @@ class GNT(nn.Module):
                 attn_dp_rate=0.1,
             )
             self.view_crosstrans.append(view_trans)
+
             # ray transformer
             ray_trans = Transformer(
                 dim=args.netwidth,
@@ -245,7 +291,7 @@ class GNT(nn.Module):
             # mlp
             if i % 2 == 0:
                 q_fc = nn.Sequential(
-                    nn.Linear(args.netwidth + posenc_dim + viewenc_dim, args.netwidth),
+                    nn.Linear(args.netwidth*2, args.netwidth),
                     nn.ReLU(),
                     nn.Linear(args.netwidth, args.netwidth),
                 )
@@ -257,7 +303,12 @@ class GNT(nn.Module):
         self.viewenc_dim = viewenc_dim
         self.ret_alpha = ret_alpha
         self.norm = nn.LayerNorm(args.netwidth)
-        self.rgb_fc = nn.Linear(args.netwidth, 3)
+        self.rgb_fc = nn.Sequential(
+                        nn.Linear(args.netwidth, args.netwidth*2),
+                        nn.ReLU(),
+                        nn.Linear(args.netwidth*2, 3),
+                        nn.Sigmoid() )
+
         self.relu = nn.ReLU()
         self.pos_enc = Embedder(
             input_dims=3,
@@ -275,107 +326,82 @@ class GNT(nn.Module):
             log_sampling=True,
             periodic_fns=[torch.sin, torch.cos],
         )
+        self.FiLM_layer = FiLM(in_channels=63+63,out_channels=64)
+        self.load_depth = args.load_depth       
 
-
-        self.load_depth = args.load_depth
-        #hanxue
-        if self.load_depth:
-            activation_func = nn.ELU(inplace=True)
-            self.out_geometry_fc = nn.Sequential(nn.Linear(args.netwidth, args.netwidth),
-                                                activation_func,
-                                                nn.Linear(args.netwidth, 1),
-                                                nn.ReLU())
-
-            self.out_rgb_fc = nn.Sequential(nn.Linear(args.netwidth, args.netwidth),
-                                            nn.ReLU(),
-                                            nn.Linear(args.netwidth, args.netwidth),)
+        # conv_blocks = [ConvBlock(idim=32, hdim=args.netwidth, odim=args.netwidth)]
+        # for i in range(2):
+        #     conv_blocks.append(ConvBlock(idim=args.netwidth, odim=args.netwidth))
         
-        
+        # self.conv_blocks = nn.Sequential(*conv_blocks)
+        # self.per_patch_linear = nn.Conv2d(args.netwidth, args.netwidth, kernel_size=1)
+        # self.view_transformer1 = ViewTransformer(args.netwidth, depth=4, heads=12, dim_head=64,
+        #                                mlp_dim=int(args.netwidth*2), selfatt=True)
+        # self.view_transformer2 = ViewTransformer(args.netwidth, kv_dim=args.netwidth, depth=1, heads=12, dim_head=64,
+        #                                mlp_dim=int(args.netwidth/2), selfatt=False)
 
-    def forward(self, rgb_feat, ray_diff, mask, pts, ray_d, dists=None, z_vals=None):
-        depth_pred=None
-        weight=None
+    def forward(self, rgb_feat, ray_diff, mask, supp_feas, pts, ray_d, dists=None, z_vals=None):
+        
         # compute positional embeddings
         viewdirs = ray_d
         viewdirs = viewdirs / torch.norm(viewdirs, dim=-1, keepdim=True)
+        
         viewdirs = torch.reshape(viewdirs, [-1, 3]).float()
-        viewdirs = self.view_enc(viewdirs)
-        pts_ = torch.reshape(pts, [-1, pts.shape[-1]]).float()
+        viewdirs = self.view_enc(viewdirs) 
+               
+        pts_ = torch.reshape( pts , [-1, pts.shape[-1]]).float()
+        pts_ = torch.reshape( pts / torch.norm(pts, dim=-1, keepdim=True), [-1, pts.shape[-1]]).float()
+        
         pts_ = self.pos_enc(pts_)
         pts_ = torch.reshape(pts_, list(pts.shape[:-1]) + [pts_.shape[-1]])
         viewdirs_ = viewdirs[:, None].expand(pts_.shape)
         embed = torch.cat([pts_, viewdirs_], dim=-1)
         input_pts, input_views = torch.split(embed, [self.posenc_dim, self.viewenc_dim], dim=-1)
-
+        
+        # torch.Size([4048, 64, 1, 35]) fea + rgb_corlor
         # project rgb features to netwidth
-        rgb_feat = self.rgbfeat_fc(rgb_feat)
-        # q_init -> maxpool
-        q = rgb_feat.max(dim=2)[0]
+        rgb_feat = self.rgbfeat_fc(rgb_feat) # torch.Size([4048, 64, 1, 64])
 
+        # q_init -> maxpool
+        fea = rgb_feat.max(dim=2)[0] #torch.Size([4048, 64, 64])
+
+        query_ray = torch.cat(( input_pts, input_views), dim=-1)
+        query_ray = self.FiLM_layer(fea, query_ray)
+
+        # all_feature_map: torch.Size([N, C, H, W])
+        # x = self.conv_blocks(supp_feas)
+        # x = self.per_patch_linear(supp_feas)
+        # x = x.flatten(2, 3).permute(0, 2, 1)
+        # num_images, patches_per_image, channels_per_patch = supp_feas.shape
+
+        # batch_size = 1
+        # supp_feas = supp_feas.reshape(batch_size, num_images * patches_per_image, channels_per_patch)
+        # supp_feas = self.view_transformer1(x)
+
+        # mask: torch.Size([4048, 64, 1, 1])
         # transformer modules
         for i, (crosstrans, q_fc, selftrans) in enumerate(
             zip(self.view_crosstrans, self.q_fcs, self.view_selftrans)
         ):
-            # view transformer to update q
-            q = crosstrans(q, rgb_feat, ray_diff, mask)
+            # view transformer to update fea
+            fea = crosstrans(fea, rgb_feat, ray_diff, mask)
             # embed positional information
             if i % 2 == 0:
-                q = torch.cat((q, input_pts, input_views), dim=-1)
-                q = q_fc(q)
-            # ray transformer
-            q = selftrans(q, ret_attn=self.ret_alpha)
+                fea= torch.cat((fea, query_ray), dim=-1)
+                fea = q_fc(fea)
+
+            # ray transformer to update q
+            fea = selftrans(fea, ret_attn=self.ret_alpha)
             # 'learned' density
             if self.ret_alpha:
-                q, attn = q
+                fea, attn = fea
 
-        if self.load_depth:
-            num_valid_obs = torch.sum(mask, dim=2)
-            sigma = self.out_geometry_fc(q)
-            # sigma = F.softplus(sigma)
-            sigma = sigma.masked_fill(num_valid_obs < 1, 0.)  # set the sigma of invalid point to zero
-            # print('sigma_out',sigma_out.shape,dists.shape)
-            # print(torch.max(dists),torch.min(dists))
-            alpha, weight, bg_weight = raw2alpha(sigma.squeeze(), dists)
-            rgb_feat = self.out_rgb_fc(q)
-            rgb_feat = torch.sum(weight[..., None] * rgb_feat, -2)
-            # print('rgb_feat2',rgb_feat.shape)
-            rgb_pred = self.rgb_fc(rgb_feat)
-            rgb_pred = torch.sigmoid(rgb_pred)
-            assert z_vals is not None
-            # if self.load_depth and (z_vals is not None):
-            depth_pred = torch.sum(weight * z_vals, dim=-1,keepdim=True)
-        else:
-            # normalize & rgb
-            h = self.norm(q)
-            last = h.mean(dim=1)
-            rgb_pred = self.rgb_fc(last)
-
-        # # visualization
-        # self.all_fea.append(last.cpu().data)
-        # self.all_rgbs.append(rgb_pred.cpu().data)
-        # # print(len(self.all_fea), last.shape)
-        # if len(self.all_fea)==189:
-        #      fea = torch.cat(self.all_fea)
-        #      fea = fea.reshape((378,504,-1))
-        #      print("#####appended all feature!!#####", fea.shape)
-        #      filename = os.path.join('/anfs/gfxdisp/hanxue_nerf_data/exp/visulize', "val_{:03d}_feature.npy".format(self.global_step))
-        #      np.save(filename, fea)
-        #      rgbs = torch.cat(self.all_rgbs)
-        #      rgbs = rgbs.reshape((378,504,-1))
-        #      print(rgbs.shape)
-        #      filename = os.path.join('/anfs/gfxdisp/hanxue_nerf_data/exp/visulize', "val_{:03d}.png".format(self.global_step))
-        #      imageio.imwrite(filename, rgbs)
-        #      self.all_fea=[]
-        #      self.all_rgbs=[]
-        #      self.global_step = self.global_step+1
-             
+        # normalize & rgb
+        h = self.norm(fea)
+        last = h.mean(dim=1)
+        rgb_pred = self.rgb_fc(last)
         if self.ret_alpha:
-            if not self.load_depth:
-                return torch.cat([rgb_pred, attn], dim=1)
-            else:
-                return torch.cat([rgb_pred, attn], dim=1), depth_pred, weight
+            return torch.cat([rgb_pred, attn], dim=1)
         else:
-            if not self.load_depth:
-                return rgb_pred
-            else:
-                return rgb_pred,depth_pred,weight
+            return rgb_pred
+  

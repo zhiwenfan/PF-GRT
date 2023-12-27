@@ -90,7 +90,7 @@ class RaySamplerSingleImage(object):
         :return:
         """
         u, v = np.meshgrid(
-            np.arange(W)[:: self.render_stride], np.arange(H)[:: self.render_stride]
+            np.arange(W)[::self.render_stride], np.arange(H)[:: self.render_stride]
         )
         u = u.reshape(-1).astype(dtype=np.float32)  # + 0.5    # add half pixel
         v = v.reshape(-1).astype(dtype=np.float32)  # + 0.5
@@ -128,9 +128,9 @@ class RaySamplerSingleImage(object):
             u, v = np.meshgrid(
                 np.arange(border_H, self.H - border_H), np.arange(border_W, self.W - border_W)
             )
+            
             u = u.reshape(-1)
             v = v.reshape(-1)
-
             select_inds = rng.choice(u.shape[0], size=(N_rand,), replace=False)
             select_inds = v[select_inds] + self.W * u[select_inds]
 
@@ -147,9 +147,7 @@ class RaySamplerSingleImage(object):
         :param N_rand: number of rays to be casted
         :return:
         """
-
         select_inds = self.sample_random_pixel(N_rand, sample_mode, center_ratio)
-
         rays_o = self.rays_o[select_inds]
         rays_d = self.rays_d[select_inds]
 

@@ -1,24 +1,17 @@
 import torch
 import os
-from .transformer_network import GNT
+from .transformer_network import NoPEGNT
 from .feature_network import ResUNet
-
 
 def de_parallel(model):
     return model.module if hasattr(model, "module") else model
-
-
-########################################################################################################################
-# creation/saving/loading of nerf
-########################################################################################################################
-
 
 class GRTModel(object):
     def __init__(self, args, load_opt=True, load_scheduler=True):
         self.args = args
         device = torch.device("cuda:{}".format(args.local_rank))
         # create coarse GNT
-        self.net_coarse = GNT(
+        self.net_coarse = NoPEGNT(
             args,
             in_feat_ch=self.args.coarse_feat_dim,
             posenc_dim=3 + 3 * 2 * 10,
@@ -29,7 +22,7 @@ class GRTModel(object):
         if args.single_net:
             self.net_fine = None
         else:
-            self.net_fine = GNT(
+            self.net_fine = NoPEGNT(
                 args,
                 in_feat_ch=self.args.fine_feat_dim,
                 posenc_dim=3 + 3 * 2 * 10,
@@ -122,8 +115,7 @@ class GRTModel(object):
             to_load = torch.load(filename, map_location="cuda:{}".format(self.args.local_rank))
         else:
             to_load = torch.load(filename)
-        # print(to_load["net_coarse"].keys())
-        # exit()
+
         if load_opt:
             self.optimizer.load_state_dict(to_load["optimizer"])
         if load_scheduler:

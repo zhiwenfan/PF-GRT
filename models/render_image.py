@@ -95,8 +95,6 @@ def render_single_image(
         )
         all_ret["outputs_coarse"][k] = tmp.squeeze()
 
-    # TODO: if invalid: replace with white
-    # all_ret["outputs_coarse"]["rgb"][all_ret["outputs_coarse"]["mask"] == 0] = 1.0
     if all_ret["outputs_fine"] is not None:
         for k in all_ret["outputs_fine"]:
             if k == "random_sigma":
@@ -104,7 +102,6 @@ def render_single_image(
             tmp = torch.cat(all_ret["outputs_fine"][k], dim=0).reshape(
                 (rgb_strided.shape[0], rgb_strided.shape[1], -1)
             )
-
             all_ret["outputs_fine"][k] = tmp.squeeze()
 
     return all_ret

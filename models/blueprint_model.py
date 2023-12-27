@@ -1,8 +1,8 @@
 from .viewAtten.view_atten import NoPEGNT
 import torch
 
-
 if __name__ == "__main__":
+    
     config = {
         "backbone_type":"ResNetFPN",
         "resolution": (8, 2),

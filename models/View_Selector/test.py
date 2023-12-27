@@ -49,13 +49,11 @@ def visual(cfg, src_img, ref_img, gt_ref_img):
 def val(cfg, model, predictor, device):
     model.eval()
     predictor.eval()
-    print(">>>>>>>>>>>>>> Loading reference database")
     ref_database = ref_loader(cfg)
 
     ref_info = {}
     with torch.no_grad():
         for clsID in ref_database.ref_info.keys():
-            print(">>>>>>>>>>>>>> Estimating features for ref " + clsID)
             ref_info_clsID = ref_database.load(clsID)
             anchors, anchor_indices = sample_farthest_points(ref_info_clsID["Rs"].view(1, -1, 9), K=cfg["DATA"]["ANCHOR_NUM"], random_start_point=False)
             anchors, anchor_indices = anchors[0], anchor_indices[0]
@@ -169,9 +167,7 @@ def test_category(cfg, model, predictor, ref_info, device, objID):
 
             gt_index = torch.argmin(ref_err).item()
             gt_err = torch.min(ref_err).item()
-
             pred_err = ref_err[pred_index].item()
-
             cls_acc = int(pred_clsID == gt_clsID)
 
             test_cat_acc.append(cls_acc)

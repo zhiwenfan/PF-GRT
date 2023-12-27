@@ -47,8 +47,6 @@ class NoPEGNT(nn.Module):
         self.viewenc_dim = viewenc_dim
         self.ret_alpha = ret_alpha
         
-        # Original SRT initializes with stddev=1/math.sqrt(d).
-        # But model initialization likely also differs between torch & jax, and this worked, so, eh.
         self.embedding_stdev = (1./math.sqrt(256))
         self.pixel_embedding = None
         self.canonical_camera_embedding = nn.Parameter(torch.randn(1, 1, 256) * self.embedding_stdev)

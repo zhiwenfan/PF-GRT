@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+
 def weighted_infoNCE_loss_func(ref_sim_pos, ref_sim_rand, ref_R_positive, ref_R_rand, src_R, id, tau=0.1):
     with torch.no_grad():
         same_cat = ((id[:, None] - id[None]) == 0).float()

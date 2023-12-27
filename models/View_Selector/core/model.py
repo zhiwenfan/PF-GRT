@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import transforms
+
+__all__ = ["ViewSelector"]
 
 class LocalNorm2d(nn.Module):
     ## borrowed from https://github.com/DagnyT/hardnet/tree/deab7e892468a07fb2cf77d41e38714fa96a6e99
@@ -177,13 +180,15 @@ class RetrievalNet(nn.Module):
         self.input_dim = cfg["DATA"]["CROP_SIZE"]
 
         self.input_norm = LocalNorm2d(17)
-
+        PIXEL_MEANS = cfg["DATA"]["PIXEL_MEAN"]
+        PIXEL_STDS = cfg["DATA"]["PIXEL_STD"]
+        self.transform = transforms.Normalize(PIXEL_MEANS, PIXEL_STDS)
         self.encoder = ResNet_encoder(norm_fn='none', dropout=cfg["TRAIN"]["DROP"])
         self.decoder = ResNet_decoder(dropout=self.cfg["TRAIN"]["DROP"], feature_dim=cfg["MODEL"]["FEATURE_DIM"])
 
     def forward(self, img):
+        img = self.transform(img)
         B, _, H, W = img.shape
-
         if img.size(1) > 1:
             img = img.mean(dim=1, keepdim=True)
 
@@ -197,13 +202,12 @@ class RetrievalNet(nn.Module):
         out = [out[i] / torch.norm(out[i], p=2, dim=1, keepdim=True).clamp(min=1e-8) for i in range(len(out))]
         return out
 
-class Sim_predictor(nn.Module):
+class ViewSelector(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
         self.dropout = self.cfg["TRAIN"]["DROP"]
         self.feature_dim = cfg["MODEL"]["FEATURE_DIM"]
-
         self.scales = cfg["MODEL"]["SCALES"]
 
         self.fc_1 = nn.Sequential(
@@ -223,28 +227,33 @@ class Sim_predictor(nn.Module):
             nn.LeakyReLU(),
             nn.Linear(self.feature_dim, 1)
         )
+        
+        self.retrival_model = RetrievalNet(cfg)
+        # checkpoint = torch.load("models/view_selector/core/backbone.pth" , map_location=lambda storage, loc: storage.cuda())
+        # pretrained_dict = checkpoint['state_dict']
+        # self.retrival_model.load_state_dict(pretrained_dict)
+        # print("weight is imported ")
+        
 
     def fusion(self, src_f, ref_f):
         out = []
         for i in range(len(self.scales)):
             fuse_f = (src_f[i][:, None]*ref_f[i][None]).view(-1, self.feature_dim, self.scales[i]**2)
             weights = self.fcs[i](fuse_f)
-
             local_mask = weights[:, 0, :]
             global_mask = weights[:, 1, :]
-
             local_mask = torch.sigmoid(local_mask)
-
             weights = torch.exp(global_mask) * local_mask
             weights = weights / torch.sum(weights, dim=-1, keepdim=True).clamp(min=1e-8)
-
             out.append((fuse_f * weights[:, None]).sum(dim=-1))
-
         out = torch.cat(out, dim=-1)
         return out
 
-    def forward(self, src_f, ref_f):
-        B_src = src_f[0].shape[0]
+    def forward(self, src_image, ref_image):
+        
+        src_f = self.retrival_model(src_image)
+        ref_f = self.retrival_model(ref_image)
+        src_f[0].shape[0]
         out = self.fusion(src_f, ref_f)
-        sim = torch.tanh(self.fc_finial(out)).view(B_src, -1)
+        sim = torch.tanh(self.fc_finial(out))
         return sim

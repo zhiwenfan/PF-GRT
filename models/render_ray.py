@@ -231,22 +231,30 @@ def render_rays(
         det=det,
     )
 
-    #hanxue
+
     dists = torch.cat((z_vals[:, 1:] - z_vals[:, :-1], torch.zeros_like(z_vals[:, :1])), dim=-1)
 
     N_rays, N_samples = pts.shape[:2]
+    
     # print('pts',torch.isnan(pts).any())
     # print('ray_batch["camera"]',torch.isnan(ray_batch["camera"]).any())
     # print('ray_batch["src_rgbs"]',torch.isnan(ray_batch["src_rgbs"]).any())
     # print('ray_batch["src_cameras"]',torch.isnan(ray_batch["src_cameras"]).any())
     # print('featmaps[0]',torch.isnan(featmaps[0]).any())
+    
+    # only use (index0/canonical)  view 
+    supp_views = ray_batch["src_rgbs"].index_select(1, torch.tensor([0],device=pts.device))
+    supp_cams = ray_batch["src_cameras"].index_select(1, torch.tensor([0],device=pts.device))
+    supp_feat = featmaps[0].index_select(0, torch.tensor([0],device=pts.device))
+    
     rgb_feat, ray_diff, mask = projector.compute(
         pts,
         ray_batch["camera"],
-        ray_batch["src_rgbs"],
-        ray_batch["src_cameras"],
-        featmaps=featmaps[0],
-    )  # [N_rays, N_samples, N_views, x]
+        supp_views,
+        supp_cams,
+        featmaps=supp_feat,
+    )  
+    # [N_rays, N_samples, N_views, x]
     # TODO: include pixel mask in ray transformer
     # pixel_mask = (
     #     mask[..., 0].sum(dim=2) > 1
@@ -256,12 +264,13 @@ def render_rays(
     # print('dists',torch.isnan(dists).any())
     # print('z_vals',torch.isnan(z_vals).any())
     # print('mask',torch.isnan(mask).any())
- 
     
+    # features
+    supp_feas = featmaps[0]
     if use_depth:
-        rgb, depth_pred, weight_pred = model.net_coarse(rgb_feat, ray_diff, mask, pts, ray_d, dists, z_vals)
+        rgb, depth_pred, weight_pred = model.net_coarse(rgb_feat, ray_diff, mask, supp_feas, pts, ray_d, dists, z_vals)
     else:
-        rgb = model.net_coarse(rgb_feat, ray_diff, mask, pts, ray_d, dists, z_vals)
+        rgb = model.net_coarse(rgb_feat, ray_diff, mask, supp_feas, pts, ray_d, dists, z_vals)
 
     if ret_alpha:
         rgb, weights = rgb[:, 0:3], rgb[:, 3:]

@@ -41,9 +41,11 @@ class Projector:
         train_intrinsics = train_cameras[:, 2:18].reshape(-1, 4, 4)  # [n_views, 4, 4]
         train_poses = train_cameras[:, -16:].reshape(-1, 4, 4)  # [n_views, 4, 4]
         xyz_h = torch.cat([xyz, torch.ones_like(xyz[..., :1])], dim=-1)  # [n_points, 4]
+        
         projections = train_intrinsics.bmm(torch.inverse(train_poses)).bmm(
             xyz_h.t()[None, ...].repeat(num_views, 1, 1)
         )  # [n_views, 4, n_points]
+        
         projections = projections.permute(0, 2, 1)  # [n_views, n_points, 4]
         pixel_locations = projections[..., :2] / torch.clamp(
             projections[..., 2:3], min=1e-8
@@ -111,6 +113,7 @@ class Projector:
         normalized_pixel_locations = self.normalize(
             pixel_locations, h, w
         )  # [n_views, n_rays, n_samples, 2]
+        
 
         # rgb sampling
         rgbs_sampled = F.grid_sample(train_imgs, normalized_pixel_locations, align_corners=True)
@@ -131,5 +134,4 @@ class Projector:
             (inbound * mask_in_front).float().permute(1, 2, 0)[..., None]
         )  # [n_rays, n_samples, n_views, 1]
 
-        # rgb_feat_sampled = torch.cat([global_feats, rgb_feat_sampled])
         return rgb_feat_sampled, ray_diff, mask

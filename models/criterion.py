@@ -25,7 +25,5 @@ class Criterion(nn.Module):
             depth_gt = ray_batch['depth']
             depth_pred = outputs['depth_pred']
             mask_depth = (depth_gt!=0)
-            # print('when calculate depth loss',depth_gt.shape,torch.sum(mask_depth),mask_depth.shape, depth_gt.shape, depth_pred.shape)
-
             depth_loss = torch.nn.functional.l1_loss(depth_pred[mask_depth], depth_gt[mask_depth]) 
         return psnr_loss+depth_loss, scalars_to_log

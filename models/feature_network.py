@@ -3,12 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import importlib
 
-
 def class_for_name(module_name, class_name):
     # load the module, will raise ImportError if module cannot be loaded
     m = importlib.import_module(module_name)
     return getattr(m, class_name)
-
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
     """3x3 convolution with padding"""
@@ -23,7 +21,6 @@ def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
         dilation=dilation,
         padding_mode="reflect",
     )
-
 
 def conv1x1(in_planes, out_planes, stride=1):
     """1x1 convolution"""
@@ -64,17 +61,13 @@ class BasicBlock(nn.Module):
 
     def forward(self, x):
         identity = x
-
         out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
-
         out = self.conv2(out)
         out = self.bn2(out)
-
         if self.downsample is not None:
             identity = self.downsample(x)
-
         out += identity
         out = self.relu(out)
 
@@ -170,6 +163,24 @@ class upconv(nn.Module):
         return self.conv(x)
 
 
+class SRTConvBlock(nn.Module):
+    def __init__(self, idim, hdim=None, odim=None):
+        super().__init__()
+        if hdim is None:
+            hdim = idim
+        if odim is None:
+            odim = 2 * hdim
+        conv_kwargs = {'bias': False, 'kernel_size': 3, 'padding': 1}
+        self.layers = nn.Sequential(
+            nn.Conv2d(idim, hdim, stride=1, **conv_kwargs),
+            nn.ReLU(),
+            nn.Conv2d(hdim, odim, stride=2, **conv_kwargs),
+            nn.ReLU())
+    def forward(self, x):
+        return self.layers(x)
+
+
+from .view_transformer import Transformer as ViewTransformer
 class ResUNet(nn.Module):
     def __init__(
         self,
@@ -243,6 +254,18 @@ class ResUNet(nn.Module):
         # fine-level conv
         self.out_conv = nn.Conv2d(out_ch, out_ch, 1, 1)
 
+
+        # cross-atten 
+        self.per_patch_linear = nn.Conv2d(256, out_ch, kernel_size=1)
+        self.view_transformer1 = ViewTransformer(out_ch, depth=4, heads=12, dim_head=64,
+                                               mlp_dim=int(out_ch*2), selfatt=True)
+
+        self.view_transformer2 = ViewTransformer(out_ch, kv_dim=out_ch, depth=4, heads=12, dim_head=64,
+                                                 mlp_dim=int(out_ch*2), selfatt=False)
+
+        self.iper_patch_linear = nn.Conv2d(out_ch, 256, kernel_size=1)
+        
+
     def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
         norm_layer = self._norm_layer
         downsample = None
@@ -299,12 +322,27 @@ class ResUNet(nn.Module):
 
     def forward(self, x):
         x = self.relu(self.bn1(self.conv1(x)))
-
         x1 = self.layer1(x)
         x2 = self.layer2(x1)
         x3 = self.layer3(x2)
 
-        x = self.upconv3(x3)
+        # self attention
+        latent = self.per_patch_linear(x3)
+        latent_shape = latent.shape
+        latent = latent.flatten(2, 3).permute(0, 2, 1)
+        
+        # cross attention
+        index0_fea = latent[0,...].unsqueeze(0).clone()
+        index0_fea = self.view_transformer1(index0_fea)
+        for idx in range(1, latent.shape[0] ):
+            support_fea = latent[idx, ...].unsqueeze(0).clone()
+            latent[0,...] = self.view_transformer2(index0_fea, support_fea)
+
+        latent = latent.permute(0, 2, 1).view(latent_shape)
+        latent = self.iper_patch_linear(latent)
+        # replace latent_shape
+        x = self.upconv3(latent)
+   
         x = self.skipconnect(x2, x)
         x = self.iconv3(x)
 
@@ -313,10 +351,12 @@ class ResUNet(nn.Module):
         x = self.iconv2(x)
 
         x_out = self.out_conv(x)
+
         if self.single_net:
             x_coarse = x_out
             x_fine = x_out
         else:
-            x_coarse = x_out[:, : self.coarse_out_ch, :]
+            x_coarse = x_out[:, :self.coarse_out_ch, :]
             x_fine = x_out[:, -self.fine_out_ch :, :]
+
         return x_coarse, x_fine
